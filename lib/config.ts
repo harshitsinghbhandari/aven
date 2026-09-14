@@ -13,6 +13,7 @@ export const config = {
   groqApiKey: () => required("GROQ_API_KEY"),
   token: () => required("VOICE_INBOX_TOKEN"),
   shortcutSetupToken: () => required("SHORTCUT_SETUP_TOKEN"),
+  defaultTeamId: () => process.env.DEFAULT_TEAM_ID ?? "a0000000-0000-4000-8000-000000000001",
   awsRegion: () => process.env.AWS_REGION ?? "us-east-1",
   bedrockModelId: () => process.env.BEDROCK_MODEL_ID ?? "global.anthropic.claude-haiku-4-5-20251001-v1:0",
 };

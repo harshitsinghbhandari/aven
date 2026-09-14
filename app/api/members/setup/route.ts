@@ -1,4 +1,5 @@
 import { createCaptureCredential, isShortcutSetupAuthorized } from "../../../../lib/auth";
+import { config } from "../../../../lib/config";
 import { getTeam, listTeamMembers } from "../../../../lib/db";
 import { serverError } from "../../../../lib/http";
 import { isUuid, readTeamId } from "../../../../lib/team-id";
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     if (!isLocalDevelopment(request)) {
       if (!isShortcutSetupAuthorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const teamId = readTeamId(request);
+    const teamId = readTeamId(request, config.defaultTeamId());
     if (!isUuid(teamId)) return Response.json({ error: "A valid teamId is required" }, { status: 400 });
     const [team, members] = await Promise.all([getTeam(teamId), listTeamMembers(teamId)]);
     if (!team) return Response.json({ error: "Team not found" }, { status: 404 });

@@ -1,6 +1,6 @@
-export function readTeamId(request: Request): string | null {
+export function readTeamId(request: Request, fallback: string | null = null): string | null {
   const url = new URL(request.url);
-  return url.searchParams.get("teamId") ?? request.headers.get("x-team-id");
+  return url.searchParams.get("teamId") ?? request.headers.get("x-team-id") ?? fallback;
 }
 
 export function isUuid(value: string | null): value is string {
