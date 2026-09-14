@@ -1,36 +1,57 @@
-import { calendarRequest } from "../../../../../lib/integrations/google-calendar";
-import { jsonWithGoogleSession, readGoogleSession } from "../../../../../lib/integrations/google-session";
+import { executeManagedCalendarAction, listManagedCalendarEvents } from "../../../../../lib/integrations/google-calendar";
+import { config } from "../../../../../lib/config";
+import { loadTeamGoogleSession, storeTeamGoogleSession } from "../../../../../lib/integrations/google-session";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const session = readGoogleSession(request);
+  const teamId = config.defaultTeamId();
+  const session = await loadTeamGoogleSession(teamId);
   if (!session) return Response.json({ error: "Google Calendar is not connected" }, { status: 401 });
   const url = new URL(request.url);
   const timeMin = url.searchParams.get("timeMin") ?? new Date().toISOString();
   const timeMax = url.searchParams.get("timeMax") ?? new Date(Date.now() + 7 * 86_400_000).toISOString();
-  const query = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "50" });
-  const calendarId = encodeURIComponent(session.selectedCalendarId);
-  const result = await calendarRequest(session.tokens, `/calendars/${calendarId}/events?${query}`);
-  return jsonWithGoogleSession(
-    { events: (result.data as { items?: unknown[] }).items ?? [], selectedCalendarId: session.selectedCalendarId },
-    { ...session, tokens: result.tokens },
-  );
+  const result = await listManagedCalendarEvents(session.tokens, session.managedCalendarId, timeMin, timeMax);
+  await storeTeamGoogleSession(teamId, { ...session, tokens: result.tokens });
+  return Response.json({ events: result.events, selectedCalendarId: session.managedCalendarId, managedCalendarId: session.managedCalendarId });
 }
 
 export async function POST(request: Request) {
-  const session = readGoogleSession(request);
+  const teamId = config.defaultTeamId();
+  const session = await loadTeamGoogleSession(teamId);
   if (!session) return Response.json({ error: "Google Calendar is not connected" }, { status: 401 });
   const body = (await request.json()) as { summary?: string; description?: string; start?: string; end?: string };
   if (!body.summary || !body.start) return Response.json({ error: "summary and start are required" }, { status: 400 });
-  const end = body.end ?? new Date(new Date(body.start).getTime() + 30 * 60_000).toISOString();
-  const calendarId = encodeURIComponent(session.selectedCalendarId);
-  const result = await calendarRequest(session.tokens, `/calendars/${calendarId}/events`, {
-    method: "POST",
-    body: JSON.stringify({ summary: body.summary, description: body.description, start: { dateTime: body.start }, end: { dateTime: end } }),
+  const result = await executeManagedCalendarAction(session.tokens, session.managedCalendarId, {
+    action: "create", title: body.summary, description: body.description, startsAt: body.start, endsAt: body.end,
   });
-  return jsonWithGoogleSession(
-    { event: result.data, selectedCalendarId: session.selectedCalendarId },
-    { ...session, tokens: result.tokens },
-  );
+  await storeTeamGoogleSession(teamId, { ...session, tokens: result.tokens });
+  return Response.json({ event: result.event, selectedCalendarId: session.managedCalendarId, managedCalendarId: session.managedCalendarId });
+}
+
+export async function PATCH(request: Request) {
+  const teamId = config.defaultTeamId();
+  const session = await loadTeamGoogleSession(teamId);
+  if (!session) return Response.json({ error: "Google Calendar is not connected" }, { status: 401 });
+  const body = (await request.json()) as { eventId?: string; summary?: string; description?: string; start?: string; end?: string | null };
+  if (!body.eventId) return Response.json({ error: "eventId is required" }, { status: 400 });
+  const result = await executeManagedCalendarAction(session.tokens, session.managedCalendarId, {
+    action: "update", eventId: body.eventId, title: body.summary, description: body.description,
+    startsAt: body.start, endsAt: body.end,
+  });
+  await storeTeamGoogleSession(teamId, { ...session, tokens: result.tokens });
+  return Response.json({ event: result.event, managedCalendarId: session.managedCalendarId });
+}
+
+export async function DELETE(request: Request) {
+  const teamId = config.defaultTeamId();
+  const session = await loadTeamGoogleSession(teamId);
+  if (!session) return Response.json({ error: "Google Calendar is not connected" }, { status: 401 });
+  const eventId = new URL(request.url).searchParams.get("eventId");
+  if (!eventId) return Response.json({ error: "eventId is required" }, { status: 400 });
+  const result = await executeManagedCalendarAction(session.tokens, session.managedCalendarId, {
+    action: "delete", eventId,
+  });
+  await storeTeamGoogleSession(teamId, { ...session, tokens: result.tokens });
+  return Response.json({ deleted: true, eventId, managedCalendarId: session.managedCalendarId });
 }

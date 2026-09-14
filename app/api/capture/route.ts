@@ -1,11 +1,14 @@
 import { readAudio } from "../../../lib/audio";
+import { after } from "next/server";
 import { readCaptureIdentity } from "../../../lib/auth";
 import { createVoiceUpdate } from "../../../lib/db";
 import { serverError } from "../../../lib/http";
 import { isUuid } from "../../../lib/team-id";
 import { transcribe } from "../../../lib/transcribe";
+import { runReconciliation } from "../../../lib/run-reconciliation";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
 export async function POST(request: Request) {
@@ -25,6 +28,9 @@ export async function POST(request: Request) {
       text = await transcribe(audio);
     }
     const update = await createVoiceUpdate(identity.teamId, identity.userId, text);
+    after(async () => {
+      try { await runReconciliation(identity.teamId); } catch (error) { console.error("Reconciliation failed after capture", error); }
+    });
     return Response.json({ success: true, update }, { status: 201 });
   } catch (error) { return serverError(error); }
 }

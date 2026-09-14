@@ -1,4 +1,5 @@
 import type { GoogleTokens } from "./google-calendar";
+import { getTeamGoogleSession, saveTeamGoogleSession } from "../db";
 import { decryptToken, encryptToken } from "./secure-token";
 
 const COOKIE_NAME = "aven_google";
@@ -6,8 +7,31 @@ const MAX_AGE = 30 * 24 * 60 * 60;
 
 export type GoogleSession = {
   tokens: GoogleTokens;
-  selectedCalendarId: string;
+  managedCalendarId: string;
 };
+
+export function encodeGoogleSession(session: GoogleSession): string {
+  return encryptToken(session);
+}
+
+export function decodeGoogleSession(token: string): GoogleSession | null {
+  try {
+    const decoded = decryptToken<GoogleSession>(token);
+    if (decoded.tokens && decoded.managedCalendarId && decoded.managedCalendarId !== "primary") return decoded;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function loadTeamGoogleSession(teamId: string): Promise<GoogleSession | null> {
+  const stored = await getTeamGoogleSession(teamId);
+  return stored ? decodeGoogleSession(stored.encryptedSessionToken) : null;
+}
+
+export async function storeTeamGoogleSession(teamId: string, session: GoogleSession): Promise<void> {
+  await saveTeamGoogleSession(teamId, encodeGoogleSession(session));
+}
 
 function cookieValue(request: Request): string | undefined {
   return request.headers.get("cookie")
@@ -20,17 +44,11 @@ function cookieValue(request: Request): string | undefined {
 export function readGoogleSession(request: Request): GoogleSession | null {
   const raw = cookieValue(request);
   if (!raw) return null;
-  try {
-    const decoded = decryptToken<GoogleSession | GoogleTokens>(decodeURIComponent(raw));
-    if ("tokens" in decoded) return decoded;
-    return { tokens: decoded, selectedCalendarId: "primary" };
-  } catch {
-    return null;
-  }
+  return decodeGoogleSession(decodeURIComponent(raw));
 }
 
 export function googleSessionCookie(session: GoogleSession): string {
-  return `${COOKIE_NAME}=${encryptToken(session)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${MAX_AGE}`;
+  return `${COOKIE_NAME}=${encodeGoogleSession(session)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${MAX_AGE}`;
 }
 
 export function clearGoogleSessionCookie(): string {

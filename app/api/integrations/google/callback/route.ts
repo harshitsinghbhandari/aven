@@ -1,6 +1,7 @@
-import { exchangeCode } from "../../../../../lib/integrations/google-calendar";
-import { googleSessionCookie } from "../../../../../lib/integrations/google-session";
+import { ensureAvenCalendar, exchangeCode } from "../../../../../lib/integrations/google-calendar";
+import { storeTeamGoogleSession } from "../../../../../lib/integrations/google-session";
 import { verifyState } from "../../../../../lib/integrations/secure-token";
+import { config } from "../../../../../lib/config";
 
 export const runtime = "nodejs";
 
@@ -17,11 +18,15 @@ export async function GET(request: Request) {
     return Response.json({ error: "Invalid OAuth callback" }, { status: 400 });
   }
   const tokens = await exchangeCode(code);
+  const managed = await ensureAvenCalendar(tokens);
+  await storeTeamGoogleSession(config.defaultTeamId(), {
+    tokens: managed.tokens,
+    managedCalendarId: managed.calendar.id,
+  });
   const response = new Response(null, {
     status: 302,
     headers: { location: new URL("/?calendar=connected", request.url).toString() },
   });
-  response.headers.append("set-cookie", googleSessionCookie({ tokens, selectedCalendarId: "primary" }));
   response.headers.append("set-cookie", "aven_google_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
   return response;
 }

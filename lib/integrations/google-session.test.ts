@@ -6,10 +6,10 @@ describe("Google session cookie", () => {
     vi.stubEnv("INTEGRATION_ENCRYPTION_KEY", Buffer.alloc(32, 7).toString("base64"));
   });
 
-  it("round trips tokens and the selected calendar", () => {
+  it("round trips tokens and the managed calendar", () => {
     const session = {
       tokens: { access_token: "access", refresh_token: "refresh", expires_at: 123 },
-      selectedCalendarId: "team@example.com",
+      managedCalendarId: "aven@example.com",
     };
     const cookie = googleSessionCookie(session).split(";", 1)[0];
     const request = new Request("https://aven.test", { headers: { cookie } });
@@ -18,6 +18,15 @@ describe("Google session cookie", () => {
 
   it("treats a malformed cookie as disconnected", () => {
     const request = new Request("https://aven.test", { headers: { cookie: "aven_google=invalid" } });
+    expect(readGoogleSession(request)).toBeNull();
+  });
+
+  it("rejects legacy sessions that could target a non Aven calendar", () => {
+    const cookie = googleSessionCookie({
+      tokens: { access_token: "access", expires_at: 123 },
+      managedCalendarId: "primary",
+    }).split(";", 1)[0];
+    const request = new Request("https://aven.test", { headers: { cookie } });
     expect(readGoogleSession(request)).toBeNull();
   });
 });

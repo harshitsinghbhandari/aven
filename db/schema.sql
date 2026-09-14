@@ -22,6 +22,13 @@ CREATE TABLE IF NOT EXISTS memberships (
   PRIMARY KEY (team_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS team_google_sessions (
+  team_id UUID PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+  encrypted_session_token TEXT NOT NULL CHECK (length(trim(encrypted_session_token)) > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS voice_updates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
@@ -29,11 +36,15 @@ CREATE TABLE IF NOT EXISTS voice_updates (
   text TEXT NOT NULL CHECK (length(trim(text)) > 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   processing_started_at TIMESTAMPTZ,
+  processing_claim_id UUID,
   processed_at TIMESTAMPTZ,
   processing_error TEXT
 );
 
+ALTER TABLE voice_updates ADD COLUMN IF NOT EXISTS processing_claim_id UUID;
+
 CREATE INDEX IF NOT EXISTS voice_updates_pending_idx ON voice_updates (team_id, created_at) WHERE processed_at IS NULL;
+CREATE INDEX IF NOT EXISTS voice_updates_processing_idx ON voice_updates (team_id, processing_started_at) WHERE processed_at IS NULL AND processing_started_at IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS team_states (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

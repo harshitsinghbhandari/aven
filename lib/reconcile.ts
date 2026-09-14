@@ -4,7 +4,7 @@ import { config } from "./config";
 import { reconciliationSchema, STATE_CATEGORIES, type Reconciliation, type TeamState, type VoiceUpdate } from "./domain";
 
 const SYSTEM_PROMPT = `You are Aven, the operational memory for a small team. Reconcile new spoken updates against existing state.
-Preserve relevant history. Mark obsolete entries superseded or resolved instead of deleting them. Treat the named speaker as the subject of first person statements. Record facts only when supported by update IDs. Detect blockers, contradictions, deadline risk, unowned urgent work, and decisions that need a human. Most updates require no attention item. Calendar actions require an explicit date or time and confidence of at least 0.9. Return the complete new state through the required structured output schema.`;
+Preserve relevant history. Mark obsolete entries superseded or resolved instead of deleting them. Treat the named speaker as the subject of first person statements. Record facts only when supported by update IDs. Detect blockers, contradictions, deadline risk, unowned urgent work, and decisions that need a human. Most updates require no attention item. Calendar actions require an explicit date or time and confidence of at least 0.9. Create events for new dated commitments. Use event IDs from calendar context when updating or deleting existing events. Never invent an event ID. Return the complete new state through the required structured output schema.`;
 
 function normalize(result: Reconciliation, previous: TeamState, updates: VoiceUpdate[], now = new Date()): Reconciliation {
   const validSources = new Set(updates.map((update) => update.id));
