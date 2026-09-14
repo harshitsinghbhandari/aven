@@ -1,5 +1,5 @@
 BEGIN;
-INSERT INTO teams (id, name) VALUES ('a0000000-0000-4000-8000-000000000001', 'Northstar Studio') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+INSERT INTO teams (id, name) VALUES ('a0000000-0000-4000-8000-000000000001', 'AgentLab Tech') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 INSERT INTO users (id, name, email) VALUES
   ('b0000000-0000-4000-8000-000000000001', 'Alex Morgan', 'alex@northstar.demo'),
   ('b0000000-0000-4000-8000-000000000002', 'Maya Chen', 'maya@northstar.demo'),
