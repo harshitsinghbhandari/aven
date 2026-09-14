@@ -12,7 +12,7 @@ function normalize(result: Reconciliation, previous: TeamState, updates: VoiceUp
   const timestamp = now.toISOString();
   const newState = { ...result.newState };
   for (const category of STATE_CATEGORIES) {
-    newState[category] = result.newState[category].map((entry) => {
+    const entries = result.newState[category].map((entry) => {
       const old = entry.id ? oldEntries.get(entry.id) : undefined;
       return {
         ...entry,
@@ -23,6 +23,14 @@ function normalize(result: Reconciliation, previous: TeamState, updates: VoiceUp
         sourceUpdateIds: [...new Set(entry.sourceUpdateIds.filter((id) => validSources.has(id) || old?.sourceUpdateIds.includes(id)))],
       };
     });
+    const deduped = new Map<string, (typeof entries)[number]>();
+    for (const entry of entries) {
+      const key = `${entry.text.trim().toLocaleLowerCase()}|${entry.owner?.trim().toLocaleLowerCase() ?? ""}|${entry.dueAt ?? ""}`;
+      const existing = deduped.get(key);
+      if (!existing) deduped.set(key, entry);
+      else deduped.set(key, { ...existing, sourceUpdateIds: [...new Set([...existing.sourceUpdateIds, ...entry.sourceUpdateIds])], updatedAt: timestamp });
+    }
+    newState[category] = [...deduped.values()];
   }
   return {
     ...result,

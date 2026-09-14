@@ -185,7 +185,11 @@ export async function saveReconciliation(teamId: string, updateIds: string[], cl
       VALUES (${teamId}, ${version}, ${updateIds}::uuid[], ${tx.json(result.stateChanges)}, ${tx.json(result.calendarActions)}) RETURNING id`;
     for (const item of result.attentionItems) {
       await tx`INSERT INTO attention_items (team_id, run_id, type, message, severity, source_update_ids)
-        VALUES (${teamId}, ${run.id}, ${item.type}, ${item.message}, ${item.severity}, ${item.sourceUpdateIds}::uuid[])`;
+        SELECT ${teamId}, ${run.id}, ${item.type}, ${item.message}, ${item.severity}, ${item.sourceUpdateIds}::uuid[]
+        WHERE NOT EXISTS (
+          SELECT 1 FROM attention_items
+          WHERE team_id = ${teamId} AND status = 'open' AND type = ${item.type} AND lower(trim(message)) = lower(trim(${item.message}))
+        )`;
     }
     await tx`UPDATE voice_updates
       SET processed_at = NOW(), processing_started_at = NULL, processing_claim_id = NULL, processing_error = NULL

@@ -6,14 +6,19 @@ import type { Reconciliation } from "./domain";
 
 function addMissingCalendarActions(result: Reconciliation, updates: { id: string }[], events: ManagedCalendarEvent[]): Reconciliation {
   const updateIds = new Set(updates.map((update) => update.id));
-  const existingActions = new Set(result.calendarActions.filter((action) => action.action === "create").map((action) => `${action.title}|${action.startsAt}`));
+  const normalizeTitle = (title: string) => title.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const sameDay = (left: string, right: string) => {
+    const a = new Date(left); const b = new Date(right);
+    return Number.isFinite(a.getTime()) && Number.isFinite(b.getTime()) && a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+  };
+  const existingActions = new Set(result.calendarActions.filter((action) => action.action === "create").map((action) => `${normalizeTitle(action.title)}|${new Date(action.startsAt).toISOString().slice(0, 10)}`));
   const generated = [...result.newState.commitments, ...result.newState.deadlines].flatMap((entry) => {
     if (!entry.dueAt || !entry.sourceUpdateIds.some((id) => updateIds.has(id))) return [];
     const startsAt = new Date(entry.dueAt);
     if (!Number.isFinite(startsAt.getTime())) return [];
     const startsAtIso = startsAt.toISOString();
-    const key = `${entry.text}|${startsAtIso}`;
-    if (existingActions.has(key) || events.some((event) => event.summary === entry.text && new Date(event.start).getTime() === startsAt.getTime())) return [];
+    const key = `${normalizeTitle(entry.text)}|${startsAtIso.slice(0, 10)}`;
+    if (existingActions.has(key) || events.some((event) => sameDay(event.start, startsAtIso) && (normalizeTitle(event.summary) === normalizeTitle(entry.text) || normalizeTitle(event.summary).includes(normalizeTitle(entry.text)) || normalizeTitle(entry.text).includes(normalizeTitle(event.summary))))) return [];
     existingActions.add(key);
     return [{ action: "create" as const, title: entry.text, startsAt: startsAtIso, endsAt: new Date(startsAt.getTime() + 30 * 60_000).toISOString(), confidence: 1, sourceUpdateIds: entry.sourceUpdateIds }];
   });
