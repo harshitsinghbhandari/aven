@@ -1,0 +1,12 @@
+flowchart LR
+  Member[Team member] -->|voice update| Shortcut[Apple Shortcut]
+  Shortcut --> API[Next.js API]
+  API --> Groq[Groq Whisper]
+  Groq --> Updates[(Postgres updates)]
+  Updates --> Agent[Strands agent]
+  State[(Team state)] --> Agent
+  Calendar[Google Calendar] --> Agent
+  Agent --> State
+  Agent --> Dashboard[Team dashboard]
+  Agent --> Calendar
+  Agent --> Push[Web Push]
