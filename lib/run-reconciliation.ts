@@ -11,18 +11,24 @@ function addMissingCalendarActions(result: Reconciliation, updates: { id: string
     const a = new Date(left); const b = new Date(right);
     return Number.isFinite(a.getTime()) && Number.isFinite(b.getTime()) && a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
   };
+  const sameEvent = (title: string, startsAt: string) => events.find((event) => sameDay(event.start, startsAt) && (normalizeTitle(event.summary) === normalizeTitle(title) || normalizeTitle(event.summary).includes(normalizeTitle(title)) || normalizeTitle(title).includes(normalizeTitle(event.summary))));
   const existingActions = new Set(result.calendarActions.filter((action) => action.action === "create").map((action) => `${normalizeTitle(action.title)}|${new Date(action.startsAt).toISOString().slice(0, 10)}`));
+  const calendarActions = result.calendarActions.map((action) => {
+    if (action.action !== "create") return action;
+    const existing = sameEvent(action.title, action.startsAt);
+    return existing ? { action: "update" as const, eventId: existing.id, title: action.title, startsAt: action.startsAt, endsAt: action.endsAt, description: action.description, confidence: action.confidence, sourceUpdateIds: action.sourceUpdateIds } : action;
+  }).filter((action, index, actions) => action.action !== "create" || actions.findIndex((candidate) => candidate.action === "create" && `${normalizeTitle(candidate.title)}|${new Date(candidate.startsAt).toISOString().slice(0, 10)}` === `${normalizeTitle(action.title)}|${new Date(action.startsAt).toISOString().slice(0, 10)}`) === index);
   const generated = [...result.newState.commitments, ...result.newState.deadlines].flatMap((entry) => {
     if (!entry.dueAt || !entry.sourceUpdateIds.some((id) => updateIds.has(id))) return [];
     const startsAt = new Date(entry.dueAt);
     if (!Number.isFinite(startsAt.getTime())) return [];
     const startsAtIso = startsAt.toISOString();
     const key = `${normalizeTitle(entry.text)}|${startsAtIso.slice(0, 10)}`;
-    if (existingActions.has(key) || events.some((event) => sameDay(event.start, startsAtIso) && (normalizeTitle(event.summary) === normalizeTitle(entry.text) || normalizeTitle(event.summary).includes(normalizeTitle(entry.text)) || normalizeTitle(entry.text).includes(normalizeTitle(event.summary))))) return [];
+    if (existingActions.has(key) || sameEvent(entry.text, startsAtIso)) return [];
     existingActions.add(key);
     return [{ action: "create" as const, title: entry.text, startsAt: startsAtIso, endsAt: new Date(startsAt.getTime() + 30 * 60_000).toISOString(), confidence: 1, sourceUpdateIds: entry.sourceUpdateIds }];
   });
-  return generated.length ? { ...result, calendarActions: [...result.calendarActions, ...generated] } : result;
+  return generated.length ? { ...result, calendarActions: [...calendarActions, ...generated] } : { ...result, calendarActions };
 }
 
 export async function runReconciliation(teamId: string) {
