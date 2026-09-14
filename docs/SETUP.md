@@ -32,7 +32,7 @@ These actions need account access and can run independently while the applicatio
 1. Run `npx web-push generate-vapid-keys` after dependencies are installed.
 2. Set the public result as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
 3. Set the private result as `VAPID_PRIVATE_KEY`.
-4. Set `VAPID_SUBJECT=mailto:harshitsingh@iitb.ac.in`.
+4. Set `VAPID_SUBJECT=mailto:your-email@example.com`.
 
 ## Deployment and submission
 
