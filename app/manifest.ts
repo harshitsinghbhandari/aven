@@ -11,6 +11,6 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#f4f0e8",
     theme_color: "#171714",
     orientation: "portrait",
-    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+    icons: [{ src: "/aven-logo.png", sizes: "900x900", type: "image/png", purpose: "any" }],
   };
 }
