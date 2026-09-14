@@ -23,6 +23,8 @@ flowchart LR
 
 The diagram source is in [`docs/architecture.mmd`](docs/architecture.mmd).
 
+![Aven architecture](docs/architecture.png)
+
 ## Local setup
 
 Requirements: Node.js 20 or newer, npm, PostgreSQL, and Python as required by the Strands service.
