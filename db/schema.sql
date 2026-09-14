@@ -81,12 +81,3 @@ CREATE TABLE IF NOT EXISTS attention_items (
 );
 
 CREATE INDEX IF NOT EXISTS attention_items_open_idx ON attention_items (team_id, created_at DESC) WHERE status = 'open';
-
-CREATE TABLE IF NOT EXISTS voice_notes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  text TEXT NOT NULL CHECK (length(trim(text)) > 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  delivered_at TIMESTAMPTZ
-);
-
-CREATE INDEX IF NOT EXISTS voice_notes_pending_idx ON voice_notes (created_at) WHERE delivered_at IS NULL;

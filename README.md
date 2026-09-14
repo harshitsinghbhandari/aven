@@ -88,19 +88,11 @@ The app exposes a web app manifest and service worker at `/sw.js`. The browser m
 
 Production Web Push requires HTTPS. Localhost is treated as a secure context by current browsers.
 
-## Voice capture
-
-Create an Apple Shortcut with Record Audio followed by Get Contents of URL. Send a `POST` request to `https://YOUR_DOMAIN/api/notes`, set `Authorization` to `Bearer YOUR_VOICE_INBOX_TOKEN`, choose a form request body, and attach Recorded Audio in the `audio` file field.
-
-Audio remains in request memory, goes directly to Groq for transcription, and is never written to disk or object storage.
-
 ## API
 
-All voice inbox and push send requests use `Authorization: Bearer <VOICE_INBOX_TOKEN>`.
+The capture endpoint uses signed member credentials. Audio remains in request memory, goes directly to Groq for transcription, and is never written to disk or object storage.
 
-* `POST /api/notes`: accept raw audio or multipart audio up to 25 MB.
-* `GET /api/notes`: return pending transcripts oldest first.
-* `POST /api/notes/:id/ack`: acknowledge a transcript.
+* `POST /api/capture`: accept text JSON or raw or multipart audio up to 25 MB.
 * `GET /api/integrations/google/connect`: start Google OAuth.
 * `GET /api/integrations/google/callback`: complete Google OAuth.
 * `GET, POST /api/integrations/google/calendar`: read or create calendar events.
@@ -111,7 +103,6 @@ All voice inbox and push send requests use `Authorization: Bearer <VOICE_INBOX_T
 
 Deploy the Next.js app to Vercel or another Node.js host. Provision PostgreSQL, run the schema, configure every environment variable listed above, and update `APP_URL` plus the Google production redirect URI. Keep all private keys and OAuth secrets server side.
 
-The final submission checklist and suggested demo path are in [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
 
 ## License
 

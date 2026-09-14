@@ -4,7 +4,6 @@ import { config } from "./config";
 import { EMPTY_TEAM_STATE, type Reconciliation, type TeamState, type VoiceUpdate } from "./domain";
 import { isReconciliationDue } from "./reconciliation-window";
 
-export type VoiceNote = { id: string; text: string; createdAt: string };
 export type AttentionItem = { id: string; type: string; message: string; severity: string; status: string; sourceUpdateIds: string[]; createdAt: string };
 export type StateSnapshot = { version: number; state: TeamState; createdAt: string };
 export type TeamRecord = {
@@ -20,18 +19,6 @@ export type TeamGoogleSession = { encryptedSessionToken: string; updatedAt: stri
 
 let client: ReturnType<typeof postgres> | undefined;
 function sql() { client ??= postgres(config.databaseUrl(), { max: 5, prepare: false }); return client; }
-
-export async function createNote(text: string): Promise<VoiceNote> {
-  const [note] = await sql()<VoiceNote[]>`INSERT INTO voice_notes (text) VALUES (${text}) RETURNING id, text, created_at AS "createdAt"`;
-  return note;
-}
-export async function listPendingNotes(): Promise<VoiceNote[]> {
-  return sql()<VoiceNote[]>`SELECT id, text, created_at AS "createdAt" FROM voice_notes WHERE delivered_at IS NULL ORDER BY created_at ASC`;
-}
-export async function acknowledgeNote(id: string): Promise<boolean> {
-  const rows = await sql()<Array<{ id: string }>>`UPDATE voice_notes SET delivered_at = COALESCE(delivered_at, NOW()) WHERE id = ${id} RETURNING id`;
-  return rows.length > 0;
-}
 
 export async function createVoiceUpdate(teamId: string, userId: string, text: string): Promise<VoiceUpdate> {
   const [update] = await sql()<VoiceUpdate[]>`

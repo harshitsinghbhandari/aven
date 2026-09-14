@@ -2,17 +2,13 @@
   "name": "voice-inbox",
   "version": "0.1.0",
   "private": true,
-  "bin": {
-    "voin": "cli/voin.mjs"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "mac-client": "node mac-client/index.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@strands-agents/sdk": "^1.17.0",
