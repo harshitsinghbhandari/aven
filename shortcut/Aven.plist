@@ -12,7 +12,7 @@
 				<key>UUID</key>
 				<string>4DB271BE-93DB-4A59-96CF-8E6D7EC1E04B</string>
 				<key>WFTextActionText</key>
-				<string>Bearer PASTE_YOUR_AVEN_CAPTURE_CREDENTIAL</string>
+				<string>PASTE_YOUR_AVEN_CAPTURE_CREDENTIAL</string>
 			</dict>
 		</dict>
 		<dict>
@@ -73,7 +73,7 @@
 											</dict>
 										</dict>
 										<key>string</key>
-										<string>&#65532;</string>
+										<string>Bearer &#65532;</string>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -124,11 +124,11 @@
 			<key>Category</key>
 			<string>Parameter</string>
 			<key>DefaultValue</key>
-			<string>Bearer PASTE_YOUR_AVEN_CAPTURE_CREDENTIAL</string>
+			<string>PASTE_YOUR_AVEN_CAPTURE_CREDENTIAL</string>
 			<key>ParameterKey</key>
 			<string>WFTextActionText</string>
 			<key>Text</key>
-			<string>Paste the complete Aven Authorization value provided by your administrator.</string>
+			<string>Paste the Aven credential starting with aven_capture_v1. Do not include Bearer.</string>
 		</dict>
 	</array>
 	<key>WFWorkflowInputContentItemClasses</key>
