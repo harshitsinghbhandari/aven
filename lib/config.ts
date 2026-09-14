@@ -1,4 +1,4 @@
-function required(name: "GROQ_API_KEY" | "VOICE_INBOX_TOKEN") {
+function required(name: "GROQ_API_KEY" | "VOICE_INBOX_TOKEN" | "SHORTCUT_SETUP_TOKEN") {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not configured`);
   return value;
@@ -12,6 +12,7 @@ export const config = {
   },
   groqApiKey: () => required("GROQ_API_KEY"),
   token: () => required("VOICE_INBOX_TOKEN"),
+  shortcutSetupToken: () => required("SHORTCUT_SETUP_TOKEN"),
   awsRegion: () => process.env.AWS_REGION ?? "us-east-1",
   bedrockModelId: () => process.env.BEDROCK_MODEL_ID ?? "global.anthropic.claude-haiku-4-5-20251001-v1:0",
 };

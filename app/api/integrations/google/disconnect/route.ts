@@ -1,5 +1,7 @@
+import { clearGoogleSessionCookie } from "../../../../../lib/integrations/google-session";
+
 export async function POST() {
   const response = Response.json({ connected: false });
-  response.headers.append("set-cookie", "aven_google=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
+  response.headers.append("set-cookie", clearGoogleSessionCookie());
   return response;
 }

@@ -1,5 +1,6 @@
 import { exchangeCode } from "../../../../../lib/integrations/google-calendar";
-import { encryptToken, verifyState } from "../../../../../lib/integrations/secure-token";
+import { googleSessionCookie } from "../../../../../lib/integrations/google-session";
+import { verifyState } from "../../../../../lib/integrations/secure-token";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     status: 302,
     headers: { location: new URL("/?calendar=connected", request.url).toString() },
   });
-  response.headers.append("set-cookie", `aven_google=${encryptToken(tokens)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+  response.headers.append("set-cookie", googleSessionCookie({ tokens, selectedCalendarId: "primary" }));
   response.headers.append("set-cookie", "aven_google_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
   return response;
 }

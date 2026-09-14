@@ -1,6 +1,7 @@
 import { readAudio } from "../../../lib/audio";
+import { readCaptureIdentity } from "../../../lib/auth";
 import { createVoiceUpdate } from "../../../lib/db";
-import { serverError, unauthorized } from "../../../lib/http";
+import { serverError } from "../../../lib/http";
 import { isUuid } from "../../../lib/team-id";
 import { transcribe } from "../../../lib/transcribe";
 
@@ -9,11 +10,8 @@ const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
 export async function POST(request: Request) {
   try {
-    const authError = unauthorized(request);
-    if (authError) return authError;
-    const teamId = request.headers.get("x-team-id");
-    const userId = request.headers.get("x-user-id");
-    if (!isUuid(teamId) || !isUuid(userId)) return Response.json({ error: "Valid X-Team-Id and X-User-Id headers are required" }, { status: 400 });
+    const identity = readCaptureIdentity(request);
+    if (!identity || !isUuid(identity.teamId) || !isUuid(identity.userId)) return Response.json({ error: "Invalid member capture credential" }, { status: 401 });
 
     let text: string;
     if ((request.headers.get("content-type") ?? "").includes("application/json")) {
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
       if (audio.type && !audio.type.startsWith("audio/")) return Response.json({ error: "Uploaded file must be audio" }, { status: 415 });
       text = await transcribe(audio);
     }
-    const update = await createVoiceUpdate(teamId, userId, text);
-    return Response.json({ update }, { status: 201 });
+    const update = await createVoiceUpdate(identity.teamId, identity.userId, text);
+    return Response.json({ success: true, update }, { status: 201 });
   } catch (error) { return serverError(error); }
 }

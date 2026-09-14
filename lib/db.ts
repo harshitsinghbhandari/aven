@@ -6,6 +6,7 @@ export type VoiceNote = { id: string; text: string; createdAt: string };
 export type AttentionItem = { id: string; type: string; message: string; severity: string; status: string; sourceUpdateIds: string[]; createdAt: string };
 export type StateSnapshot = { version: number; state: TeamState; createdAt: string };
 export type TeamRecord = { id: string; name: string; activeWindowEndsAt: string | null };
+export type TeamMember = { id: string; name: string; email: string; role: "owner" | "member" };
 
 let client: ReturnType<typeof postgres> | undefined;
 function sql() { client ??= postgres(config.databaseUrl(), { max: 5, prepare: false }); return client; }
@@ -60,6 +61,13 @@ export async function getTeam(teamId: string): Promise<TeamRecord | null> {
       CASE WHEN activity_window_started_at IS NULL THEN NULL ELSE activity_window_started_at + INTERVAL '1 hour' END AS "activeWindowEndsAt"
     FROM teams WHERE id = ${teamId}`;
   return team ?? null;
+}
+
+export async function listTeamMembers(teamId: string): Promise<TeamMember[]> {
+  return sql()<TeamMember[]>`
+    SELECT u.id, u.name, u.email, m.role FROM memberships m
+    JOIN users u ON u.id = m.user_id WHERE m.team_id = ${teamId}
+    ORDER BY CASE m.role WHEN 'owner' THEN 0 ELSE 1 END, u.name ASC`;
 }
 
 export async function claimPendingUpdates(teamId: string): Promise<VoiceUpdate[]> {

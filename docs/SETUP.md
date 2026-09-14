@@ -23,8 +23,9 @@ These actions need account access and can run independently while the applicatio
 1. Create a Groq API key for transcription.
 2. Provision PostgreSQL and run `db/schema.sql`.
 3. Generate `VOICE_INBOX_TOKEN` with `openssl rand -hex 32`.
-4. Generate `INTEGRATION_ENCRYPTION_KEY` with `openssl rand -base64 32`.
-5. Set `APP_URL` to the exact deployment origin, without a trailing slash.
+4. Generate `SHORTCUT_SETUP_TOKEN` with `openssl rand -base64 36`. This protects the browser page that reveals the Apple Shortcut bearer token during setup.
+5. Generate `INTEGRATION_ENCRYPTION_KEY` with `openssl rand -base64 32`.
+6. Set `APP_URL` to the exact deployment origin, without a trailing slash.
 
 ## Web Push
 

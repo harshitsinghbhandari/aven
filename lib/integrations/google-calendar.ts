@@ -8,6 +8,24 @@ export type GoogleTokens = {
   refresh_token?: string;
 };
 
+export type GoogleCalendar = {
+  id: string;
+  summary: string;
+  primary?: boolean;
+  accessRole: string;
+};
+
+export function isWritableCalendar(calendar: GoogleCalendar): boolean {
+  return calendar.accessRole === "owner" || calendar.accessRole === "writer";
+}
+
+export async function listWritableCalendars(tokens: GoogleTokens) {
+  const query = new URLSearchParams({ minAccessRole: "writer", showHidden: "false", maxResults: "250" });
+  const result = await calendarRequest(tokens, `/users/me/calendarList?${query}`);
+  const calendars = ((result.data as { items?: GoogleCalendar[] }).items ?? []).filter(isWritableCalendar);
+  return { calendars, tokens: result.tokens };
+}
+
 function settings() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
