@@ -65,7 +65,17 @@ export async function getLatestState(teamId: string): Promise<StateSnapshot> {
   const [snapshot] = await sql()<StateSnapshot[]>`
     SELECT version, state_json AS state, created_at AS "createdAt" FROM team_states
     WHERE team_id = ${teamId} ORDER BY version DESC LIMIT 1`;
-  return snapshot ?? { version: 0, state: EMPTY_TEAM_STATE, createdAt: new Date(0).toISOString() };
+  if (!snapshot) return { version: 0, state: EMPTY_TEAM_STATE, createdAt: new Date(0).toISOString() };
+  const state = { ...snapshot.state };
+  for (const category of Object.keys(EMPTY_TEAM_STATE) as Array<keyof TeamState>) {
+    const seen = new Set<string>();
+    state[category] = state[category].filter((entry) => {
+      const key = `${entry.text.trim().toLocaleLowerCase()}|${entry.owner?.trim().toLocaleLowerCase() ?? ""}|${entry.dueAt ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+  }
+  return { ...snapshot, state };
 }
 
 export async function listAttention(teamId: string): Promise<AttentionItem[]> {

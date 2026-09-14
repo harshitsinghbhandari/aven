@@ -91,7 +91,13 @@ export async function listManagedCalendarEvents(
       htmlLink: event.htmlLink ? String(event.htmlLink) : undefined,
     } satisfies ManagedCalendarEvent;
   });
-  return { events, tokens: result.tokens };
+  const seen = new Set<string>();
+  const uniqueEvents = events.filter((event) => {
+    const key = `${event.summary.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}|${event.start.slice(0, 10)}`;
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+  return { events: uniqueEvents, tokens: result.tokens };
 }
 
 function eventBody(action: Extract<ManagedCalendarAction, { action: "create" | "update" }>) {
